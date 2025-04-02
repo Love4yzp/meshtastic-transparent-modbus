@@ -1,0 +1,1084 @@
+[
+    {
+        "id": "439d5e70ce3ecdca",
+        "type": "group",
+        "z": "20ecd4df797c02cc",
+        "name": "",
+        "style": {
+            "stroke": "#6f2fa0",
+            "fill-opacity": "0.5",
+            "label": true,
+            "color": "#f8f8f2"
+        },
+        "nodes": [
+            "56921be642c38aed",
+            "6b4140c607052f99",
+            "90e24c48d008ae22",
+            "1fa7e441e18dfe53",
+            "1d664ceaf90b2f02",
+            "eaf59b33a6ff7c84",
+            "f17977cee6c141ce",
+            "f0753d54788bf344",
+            "afa67f75ea42d123",
+            "bdd94d728cb02e5b",
+            "0181599924b28d6c",
+            "0c8ea4d3fd121ca6",
+            "ac515b881be347f8",
+            "2f057d9f55d020b2",
+            "1f10b5c6e8327ee5",
+            "40d18538c380decd",
+            "32bf810ef638f092",
+            "53b34a65265a9df5",
+            "739fd4b951bb8032",
+            "38d9083f0fe0af16",
+            "e15650d29ccd0000",
+            "a217a076eb0bfc24",
+            "7068b8dfab0915c0",
+            "9a69ab2c5d5f5764",
+            "c4a196e4a604379e",
+            "9a9867f250f51c6e",
+            "556b82578db9e2d5",
+            "9abf789d7d4391b2"
+        ],
+        "x": 44,
+        "y": 159,
+        "w": 1492,
+        "h": 582
+    },
+    {
+        "id": "5f4caa2e20c67f96",
+        "type": "subflow",
+        "name": "Get Meshtastic shortName",
+        "info": "从 Meshtastic 获取并设置 shortName",
+        "category": "",
+        "in": [
+            {
+                "x": 50,
+                "y": 30,
+                "wires": [
+                    {
+                        "id": "b7e52c47c37ec0c2"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 740,
+                "y": 220,
+                "wires": [
+                    {
+                        "id": "709ee1674cf25ead",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "meta": {},
+        "color": "#DDAA99",
+        "status": {
+            "x": 720,
+            "y": 320,
+            "wires": [
+                {
+                    "id": "baa069ec8310f29c",
+                    "port": 1
+                }
+            ]
+        }
+    },
+    {
+        "id": "1b9ef5dfc6aa1ee9",
+        "type": "websocket out",
+        "z": "5f4caa2e20c67f96",
+        "name": "Meshtastic Client",
+        "server": "",
+        "client": "meshtastic_ws",
+        "x": 490,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "6c9048804c421d98",
+        "type": "websocket in",
+        "z": "5f4caa2e20c67f96",
+        "name": "Meshtastic 接收",
+        "server": "",
+        "client": "meshtastic_ws",
+        "x": 180,
+        "y": 220,
+        "wires": [
+            [
+                "baa069ec8310f29c",
+                "9e673d1ea81c9417"
+            ]
+        ]
+    },
+    {
+        "id": "baa069ec8310f29c",
+        "type": "function",
+        "z": "5f4caa2e20c67f96",
+        "name": "ShortName",
+        "func": "// 首先添加调试信息\n// node.warn(\"Received payload type: \" + typeof msg.payload);\n// node.warn(\"Received payload: \" + JSON.stringify(msg.payload));\n\n// 添加 try-catch 来处理可能的解析错误\nvar payload;\ntry {\n    // 检查 payload 是否已经是对象\n    if (typeof msg.payload === 'object') {\n        payload = msg.payload;\n    } else {\n        payload = JSON.parse(msg.payload);\n    }\n} catch (e) {\n    node.error(\"JSON Parse Error: \" + e.message);\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Parse Error\" });\n    return [null, { payload: { fill: \"red\", shape: \"ring\", text: \"Parse Error\" } }];\n}\n\n// 检查payload是否有效\nif (!payload || payload.type !== \"node_list\" || !payload.data) {\n    // node.status({ fill: \"red\", shape: \"ring\", text: \"Invalid data\" });\n    // return [null, { payload: { fill: \"red\", shape: \"ring\", text: \"Invalid data\" } }];\n    return [null];\n}\n\n// 获取第一个节点的id和user信息\nvar firstNode = payload.data[0];\nif (!firstNode) {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"No nodes found\" });\n    return [null, { payload: { fill: \"yellow\", shape: \"ring\", text: \"No nodes found\" } }];\n}\n\nvar result = {\n    id: firstNode.id,\n    user: firstNode.user\n};\n\n// 创建状态消息\nvar statusMsg = { payload: {} };\n\nif (firstNode.user && firstNode.user.shortName) {\n    // 存储 shortName 到全局上下文\n    global.set(\"userShortName\", firstNode.user.shortName);\n\n    statusMsg.payload = {\n        fill: \"green\",\n        shape: \"dot\",\n        text: firstNode.user.shortName\n    };\n\n    // 直接更新节点状态\n    node.status(statusMsg.payload);\n} else {\n    statusMsg.payload = {\n        fill: \"grey\",\n        shape: \"ring\",\n        text: \"No name\"\n    };\n\n    // 直接更新节点状态\n    node.status(statusMsg.payload);\n}\n\nreturn [result, statusMsg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 220,
+        "wires": [
+            [
+                "709ee1674cf25ead"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "709ee1674cf25ead",
+        "type": "debug",
+        "z": "5f4caa2e20c67f96",
+        "name": "Result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 590,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "b7e52c47c37ec0c2",
+        "type": "function",
+        "z": "5f4caa2e20c67f96",
+        "name": "get_node_list",
+        "func": "msg.payload = { \"type\": \"get_node_list\" }\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 60,
+        "wires": [
+            [
+                "1b9ef5dfc6aa1ee9"
+            ]
+        ]
+    },
+    {
+        "id": "9e673d1ea81c9417",
+        "type": "debug",
+        "z": "5f4caa2e20c67f96",
+        "d": true,
+        "name": "debug 18",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "ee494fda74a993ed",
+        "type": "subflow",
+        "name": "Msg For Me",
+        "info": "接收并处理来自 ROOT 节点的消息",
+        "category": "",
+        "in": [],
+        "out": [
+            {
+                "x": 720,
+                "y": 300,
+                "wires": [
+                    {
+                        "id": "8b125b11733893ec",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "meta": {},
+        "color": "#DDAA99"
+    },
+    {
+        "id": "393a63b091985dd1",
+        "type": "websocket in",
+        "z": "ee494fda74a993ed",
+        "name": "Meshtastic 接收",
+        "server": "",
+        "client": "meshtastic_ws",
+        "x": 180,
+        "y": 300,
+        "wires": [
+            [
+                "8b125b11733893ec"
+            ]
+        ]
+    },
+    {
+        "id": "8b125b11733893ec",
+        "type": "function",
+        "z": "ee494fda74a993ed",
+        "name": "消息处理",
+        "func": "// Debug输入\nnode.debug(\"Received message: \" + JSON.stringify(msg));\n\n// 统一处理输入数据格式\nlet payload;\ntry {\n    payload = (typeof msg.payload === 'string') ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n    node.error(\"Failed to parse payload: \" + e.message);\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Parse Error\" });\n    return null;\n}\n\n// 检查消息类型\nif (payload.type !== \"text\") {\n    return null;\n}\n\n// 获取必要的值\nconst fromShortName = payload.shortName;\n// const fromLongName = payload.fromLongName;\nconst myShortName = global.get(\"userShortName\");\n\nnode.debug(\"fromShortName: \" + fromShortName);\nnode.debug(\"myShortName: \" + myShortName);\n\n// 验证本地配置\nif (!myShortName) {\n    node.error(\"Runtime error: userShortName not found\");\n    node.status({ fill: \"red\", shape: \"ring\", text: \"No Local ID\" });\n    return null;\n}\n\n// 解析消息内容\nlet msgMsg;\ntry {\n    msgMsg = (typeof payload.message === 'string') ? JSON.parse(payload.message) : payload.message;\n} catch (e) {\n    node.error(\"Failed to parse message content: \" + e.message);\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Content Parse Error\" });\n    return null;\n}\n\n// 验证消息格式\nif (!msgMsg || typeof msgMsg.i === 'undefined') {\n    node.error(\"Invalid message format: missing 'i' field\");\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Invalid Format\" });\n    return null;\n}\n\n// 检查目标接收者\nconst msgToNode = msgMsg.i;\nif (msgToNode !== myShortName) {\n    node.status({ fill: \"yellow\", shape: \"dot\", text: \"Not For Me: \" + msgToNode });\n    return null;\n}\n\n// 设置成功状态\nnode.status({ fill: \"green\", shape: \"dot\", text: \"Message Received\" });\n\n// 输出处理后的消息\nmsg.payload = msgMsg;\nmsg.fromShortName = fromShortName;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "632d4d71cc1abd2c",
+        "type": "subflow",
+        "name": "Send Mesh",
+        "info": "",
+        "category": "",
+        "in": [
+            {
+                "x": 200,
+                "y": 220,
+                "wires": [
+                    {
+                        "id": "11f176b2edaf6387"
+                    }
+                ]
+            }
+        ],
+        "out": [],
+        "env": [
+            {
+                "name": "channel",
+                "type": "str",
+                "value": "0"
+            }
+        ],
+        "meta": {},
+        "color": "#DDAA99",
+        "status": {
+            "x": 760,
+            "y": 300,
+            "wires": [
+                {
+                    "id": "6875daf9fb761952",
+                    "port": 1
+                }
+            ]
+        }
+    },
+    {
+        "id": "426501dd879010dd",
+        "type": "websocket out",
+        "z": "632d4d71cc1abd2c",
+        "name": "Meshtastic 发送",
+        "server": "",
+        "client": "meshtastic_ws",
+        "x": 560,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "11f176b2edaf6387",
+        "type": "function",
+        "z": "632d4d71cc1abd2c",
+        "name": "格式化发送消息",
+        "func": "// 检查是否有目标信息\n// if (!msg.mshParams) {\n//     node.error(\"缺少目标信息\");\n//     return null;\n// }\n\n\n// 构造发送消息\nconst outMsg = {\n    payload: {\n        message: JSON.stringify(msg.payload)\n    }\n};\n\n// 添加目标信息\n// if (msg.mshParams.channel !== undefined) {\n//     outMsg.payload.channel = msg.mshParams.channel;\n// } else if (msg.mshParams.destination) {\n//     outMsg.payload.destination = msg.mshParams.destination;\n// } else {\noutMsg.payload.channel = 0;  // 默认频道\n// }\n\nreturn outMsg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 220,
+        "wires": [
+            [
+                "426501dd879010dd"
+            ]
+        ]
+    },
+    {
+        "id": "9f4fe910a7de3da6",
+        "type": "websocket in",
+        "z": "632d4d71cc1abd2c",
+        "name": "Meshtastic 接收",
+        "server": "",
+        "client": "meshtastic_ws",
+        "x": 320,
+        "y": 320,
+        "wires": [
+            [
+                "6875daf9fb761952"
+            ]
+        ]
+    },
+    {
+        "id": "6875daf9fb761952",
+        "type": "function",
+        "z": "632d4d71cc1abd2c",
+        "name": "statusMsg",
+        "func": "var payload = msg.payload;\n\n// 创建一个状态消息\nvar statusMsg = { payload: {} };\n\nif (payload.type === \"success\") {\n    statusMsg.payload = { fill: \"green\", shape: \"dot\", text: \"操作成功\" };\n} else if (payload.type === \"error\") {\n    statusMsg.payload = { fill: \"red\", shape: \"dot\", text: \"操作失败\" };\n    // } \n    // else if (payload.type === \"warning\") {\n    //     statusMsg.payload = { fill: \"yellow\", shape: \"dot\", text: \"警告\" };\n    // } else if (payload.type === \"info\") {\n    //     statusMsg.payload = { fill: \"blue\", shape: \"dot\", text: \"信息\" };\n} else {\n    // statusMsg.payload = { fill: \"grey\", shape: \"ring\", text: \"\" };\n    statusMsg = null;\n}\n\n// 返回两个输出：原始消息和状态消息\nreturn [msg, statusMsg];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 320,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "meshtastic_ws",
+        "type": "websocket-client",
+        "path": "ws://host.docker.internal:5800",
+        "tls": "",
+        "wholemsg": "false",
+        "hb": "0",
+        "subprotocol": "",
+        "headers": []
+    },
+    {
+        "id": "56921be642c38aed",
+        "type": "modbus-flex-getter",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道1",
+        "showStatusActivities": true,
+        "showErrors": true,
+        "showWarnings": true,
+        "logIOActivities": false,
+        "server": "4e27f96c76ccf5a1",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": true,
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1030,
+        "y": 340,
+        "wires": [
+            [
+                "f17977cee6c141ce",
+                "bdd94d728cb02e5b"
+            ],
+            [
+                "f0753d54788bf344"
+            ]
+        ]
+    },
+    {
+        "id": "6b4140c607052f99",
+        "type": "debug",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "debug 31",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "90e24c48d008ae22",
+        "type": "switch",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "读取通道选择器",
+        "property": "oriPayload.p",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "2",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "3",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 860,
+        "y": 420,
+        "wires": [
+            [
+                "56921be642c38aed"
+            ],
+            [
+                "1fa7e441e18dfe53"
+            ],
+            [
+                "1d664ceaf90b2f02"
+            ]
+        ]
+    },
+    {
+        "id": "1fa7e441e18dfe53",
+        "type": "modbus-flex-getter",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道2",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "logIOActivities": false,
+        "server": "19ac60cc3ceb9e6e",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": true,
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1030,
+        "y": 380,
+        "wires": [
+            [
+                "f17977cee6c141ce",
+                "bdd94d728cb02e5b"
+            ],
+            [
+                "f0753d54788bf344"
+            ]
+        ]
+    },
+    {
+        "id": "1d664ceaf90b2f02",
+        "type": "modbus-flex-getter",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道3",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "logIOActivities": false,
+        "server": "883da88c28f30d7c",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": true,
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1030,
+        "y": 420,
+        "wires": [
+            [
+                "f17977cee6c141ce",
+                "bdd94d728cb02e5b"
+            ],
+            [
+                "f0753d54788bf344"
+            ]
+        ]
+    },
+    {
+        "id": "eaf59b33a6ff7c84",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "RTU 信息预处理",
+        "func": "// 保存原始消息和来源信息\nmsg.oriPayload = {\n    ...msg.payload,\n    fromShortName: msg.fromShortName\n};\n\n// 构建Modbus操作参数\nmsg.payload = {\n    unitid: msg.payload.c.a,\n    fc: msg.payload.c.f,\n    address: msg.payload.c.r,\n    quantity: msg.payload.c.n,\n    value: msg.payload.c.d\n};\n\n// 根据功能码区分读写操作\n// 写操作功能码：5, 6, 15, 16\n// 读操作功能码：1, 2, 3, 4\nconst writeFCs = [5, 6, 15, 16];\n\nif (writeFCs.includes(msg.payload.fc)) {\n    return [null, msg]; // 写操作从第二个输出口出去\n} else {\n    return [msg, null]; // 读操作从第一个输出口出去\n}\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 440,
+        "wires": [
+            [
+                "90e24c48d008ae22",
+                "afa67f75ea42d123"
+            ],
+            [
+                "53b34a65265a9df5"
+            ]
+        ]
+    },
+    {
+        "id": "f17977cee6c141ce",
+        "type": "debug",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "msg.payload",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "f0753d54788bf344",
+        "type": "debug",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1190,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "afa67f75ea42d123",
+        "type": "debug",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "debug 34",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "bdd94d728cb02e5b",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "响应处理器",
+        "func": "// 简化版本\nmsg.payload = {\n    i: msg.fromShortName,\n    ss: msg.oriPayload.ss,\n    tp: msg.oriPayload.tp,\n    d: Array.isArray(msg.payload) ? msg.payload : [msg.payload]  // 适配数据\n};\nmsg.channel = \"1\"\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1240,
+        "y": 380,
+        "wires": [
+            [
+                "0181599924b28d6c",
+                "0c8ea4d3fd121ca6"
+            ]
+        ]
+    },
+    {
+        "id": "0181599924b28d6c",
+        "type": "subflow:632d4d71cc1abd2c",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "x": 1440,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "0c8ea4d3fd121ca6",
+        "type": "debug",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "debug 35",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1410,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "ac515b881be347f8",
+        "type": "switch",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "If Mesh Version V1",
+        "property": "payload.v",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 290,
+        "y": 480,
+        "wires": [
+            [
+                "40d18538c380decd"
+            ]
+        ]
+    },
+    {
+        "id": "2f057d9f55d020b2",
+        "type": "subflow:ee494fda74a993ed",
+        "z": "20ecd4df797c02cc",
+        "d": true,
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "x": 150,
+        "y": 360,
+        "wires": [
+            [
+                "6b4140c607052f99",
+                "9a9867f250f51c6e"
+            ]
+        ]
+    },
+    {
+        "id": "1f10b5c6e8327ee5",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "TCP 信息预处理",
+        "func": "// 保存原始数据供后续使用\nmsg.oriPayload = {\n    ...msg.payload,\n    fromShortName: msg.fromShortName\n};\n\nmsg.payload = {\n    // 连接配置\n    tcpHost: msg.payload.h,    // 动态设置IP\n    tcpPort: msg.payload.p,    // 动态设置端口\n\n    // Modbus操作配置\n    unitid: msg.payload.c.a,   // 设备地址\n    fc: msg.payload.c.f,       // 功能码\n    address: msg.payload.c.r,  // 寄存器地址\n    quantity: msg.payload.c.n, // 数量\n    value: msg.payload.c.d     // 写入值（如果是写操作）\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 660,
+        "wires": [
+            [
+                "7068b8dfab0915c0"
+            ]
+        ]
+    },
+    {
+        "id": "40d18538c380decd",
+        "type": "switch",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "property": "payload.t",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "r",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "t",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 450,
+        "y": 480,
+        "wires": [
+            [
+                "eaf59b33a6ff7c84"
+            ],
+            [
+                "1f10b5c6e8327ee5"
+            ]
+        ]
+    },
+    {
+        "id": "32bf810ef638f092",
+        "type": "modbus-flex-write",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道一",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "server": "4e27f96c76ccf5a1",
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1010,
+        "y": 520,
+        "wires": [
+            [
+                "e15650d29ccd0000"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "53b34a65265a9df5",
+        "type": "switch",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "写入通道选择器",
+        "property": "oriPayload.p",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "2",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "3",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 860,
+        "y": 480,
+        "wires": [
+            [
+                "32bf810ef638f092"
+            ],
+            [
+                "739fd4b951bb8032"
+            ],
+            [
+                "38d9083f0fe0af16"
+            ]
+        ]
+    },
+    {
+        "id": "739fd4b951bb8032",
+        "type": "modbus-flex-write",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道二",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "server": "19ac60cc3ceb9e6e",
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1010,
+        "y": 560,
+        "wires": [
+            [
+                "e15650d29ccd0000"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "38d9083f0fe0af16",
+        "type": "modbus-flex-write",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "通道三",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "server": "4e27f96c76ccf5a1",
+        "emptyMsgOnFail": false,
+        "keepMsgProperties": true,
+        "delayOnStart": false,
+        "startDelayTime": "",
+        "x": 1010,
+        "y": 600,
+        "wires": [
+            [
+                "e15650d29ccd0000"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "e15650d29ccd0000",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "响应处理器",
+        "func": "// 简化版本\nmsg.payload = {\n    i: msg.fromShortName,\n    ss: msg.oriPayload.ss,\n    tp: msg.oriPayload.tp,\n    d: Array.isArray(msg.payload) ? msg.payload : [msg.payload]  // 适配数据\n};\nmsg.channel = \"1\"\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1230,
+        "y": 560,
+        "wires": [
+            [
+                "a217a076eb0bfc24"
+            ]
+        ]
+    },
+    {
+        "id": "a217a076eb0bfc24",
+        "type": "subflow:632d4d71cc1abd2c",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "x": 1410,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "7068b8dfab0915c0",
+        "type": "modbus-flex-connector",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "maxReconnectsPerMinute": 4,
+        "emptyQueue": false,
+        "showStatusActivities": false,
+        "showErrors": false,
+        "server": "4e27f96c76ccf5a1",
+        "emptyMsgOnFail": false,
+        "configMsgOnChange": false,
+        "x": 870,
+        "y": 700,
+        "wires": [
+            [
+                "9a69ab2c5d5f5764"
+            ]
+        ]
+    },
+    {
+        "id": "9a69ab2c5d5f5764",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "响应处理器",
+        "func": "// 简化版本\nmsg.payload = {\n    i: msg.fromShortName,\n    ss: msg.oriPayload.ss,\n    tp: msg.oriPayload.tp,\n    d: Array.isArray(msg.payload) ? msg.payload : [msg.payload]  // 适配数据\n};\nmsg.channel = \"1\"\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1210,
+        "y": 700,
+        "wires": [
+            [
+                "c4a196e4a604379e"
+            ]
+        ]
+    },
+    {
+        "id": "c4a196e4a604379e",
+        "type": "subflow:632d4d71cc1abd2c",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "x": 1390,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "9a9867f250f51c6e",
+        "type": "function",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "转化 address 为 16 进制",
+        "func": " const payload = msg.payload;\n\n// 检查是否存在r参数\nif (payload.c && payload.c.r !== undefined) {\n    // 如果r是十六进制字符串（以0x开头）\n    if (typeof payload.c.r === 'string' && payload.c.r.toLowerCase().startsWith('0x')) {\n        payload.c.r = parseInt(payload.c.r, 16);\n    }\n    // 如果r是数字，保持不变\n}\n\nmsg.payload = payload;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 420,
+        "wires": [
+            [
+                "ac515b881be347f8"
+            ]
+        ]
+    },
+    {
+        "id": "556b82578db9e2d5",
+        "type": "inject",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 240,
+        "wires": [
+            [
+                "9abf789d7d4391b2"
+            ]
+        ]
+    },
+    {
+        "id": "9abf789d7d4391b2",
+        "type": "subflow:5f4caa2e20c67f96",
+        "z": "20ecd4df797c02cc",
+        "g": "439d5e70ce3ecdca",
+        "name": "",
+        "x": 340,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4e27f96c76ccf5a1",
+        "type": "modbus-client",
+        "name": "Default RS485 Channel 1",
+        "clienttype": "serial",
+        "bufferCommands": false,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "127.0.0.1",
+        "tcpPort": "502",
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyAMA2",
+        "serialType": "RTU",
+        "serialBaudrate": "9600",
+        "serialDatabits": "8",
+        "serialStopbits": "1",
+        "serialParity": "none",
+        "serialConnectionDelay": "1000",
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": 1,
+        "commandDelay": 1,
+        "clientTimeout": 3000,
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": 2000,
+        "parallelUnitIdsAllowed": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    },
+    {
+        "id": "19ac60cc3ceb9e6e",
+        "type": "modbus-client",
+        "name": "Default RS485 Channel 2",
+        "clienttype": "serial",
+        "bufferCommands": false,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "127.0.0.1",
+        "tcpPort": "502",
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyAMA3",
+        "serialType": "RTU",
+        "serialBaudrate": "9600",
+        "serialDatabits": "8",
+        "serialStopbits": "1",
+        "serialParity": "none",
+        "serialConnectionDelay": "1000",
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": "1",
+        "commandDelay": "1",
+        "clientTimeout": "3000",
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": "2000",
+        "parallelUnitIdsAllowed": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    },
+    {
+        "id": "883da88c28f30d7c",
+        "type": "modbus-client",
+        "name": "Default RS485 Channel 3",
+        "clienttype": "serial",
+        "bufferCommands": false,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "127.0.0.1",
+        "tcpPort": "502",
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyAMA4",
+        "serialType": "RTU",
+        "serialBaudrate": "9600",
+        "serialDatabits": "8",
+        "serialStopbits": "1",
+        "serialParity": "none",
+        "serialConnectionDelay": "1000",
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": "1",
+        "commandDelay": "1",
+        "clientTimeout": "3000",
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": "2000",
+        "parallelUnitIdsAllowed": false,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    }
+]
