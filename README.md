@@ -272,3 +272,9 @@ meshtastic --set lora.region "US" --set lora.override_frequency 906.875
 | 4 | Modbus设备 | 边缘Meshtastic节点 | RS485/以太网 | Modbus响应 |
 | 5 | 边缘Meshtastic节点 | XIAO | LoRa无线 | Meshtastic协议包 |
 | 6 | XIAO | R1000上的应用 | USB串口 | JSON响应 |
+
+### NodeRED 与 Meshtastic 网络的接入
+
+由于 NodeRED 没有现成的 Meshtastic 库，所以直接使用 Python 的 Meshtastic 库然后引出 Meshtastic 接口用于 NodeRED 进行控制 Meshtastic 设备的收发。
+
+具体实现请看：`websocket-meshtastic-bridge`。

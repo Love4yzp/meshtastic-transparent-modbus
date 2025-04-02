@@ -1,0 +1,3 @@
+[submodule "websocket-meshtastic-bridge"]
+	path = websocket-meshtastic-bridge
+	url = https://github.com/Love4yzp/websocket-meshtastic-bridge.git
